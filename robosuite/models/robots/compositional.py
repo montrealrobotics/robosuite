@@ -102,3 +102,17 @@ class PandaDexLH(Panda):
     @property
     def gripper_mount_quat_offset(self):
         return {"right": [0.5, -0.5, 0.5, -0.5]}
+
+
+class PandaDexLeapRH(Panda):
+    @property
+    def default_gripper(self):
+        return {"right": "LEAPRightHand"}
+
+    @property
+    def gripper_mount_pos_offset(self):
+        return {"right": [0.05, -0.02, 0.0]}
+
+    @property
+    def gripper_mount_quat_offset(self):
+        return {"right": [0, 1, 0, 0]}
