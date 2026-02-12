@@ -111,8 +111,48 @@ class PandaDexLeapRH(Panda):
 
     @property
     def gripper_mount_pos_offset(self):
-        return {"right": [0.05, -0.02, 0.0]}
+        return {"right": [0.06, -0.02, 0]}
 
     @property
     def gripper_mount_quat_offset(self):
         return {"right": [0, 1, 0, 0]}
+
+
+class PandaDexLeapRHOmron(Panda):
+    """Panda arm + LEAP right hand on Omron wheeled base (for Robocasa kitchen tasks)."""
+
+    @property
+    def default_base(self):
+        return "OmronMobileBase"
+
+    @property
+    def default_gripper(self):
+        return {"right": "LEAPRightHand"}
+
+    @property
+    def gripper_mount_pos_offset(self):
+        return {"right": [0.06, -0.02, 0]}
+
+    @property
+    def gripper_mount_quat_offset(self):
+        return {"right": [0, 1, 0, 0]}
+
+    @property
+    def default_arms(self):
+        return {"right": "Panda"}
+
+    @property
+    def init_qpos(self):
+        return np.array([0, np.pi / 16.0 - 0.2, 0.00, -np.pi / 2.0 - np.pi / 3.0, 0.00, np.pi - 0.4, np.pi / 4])
+
+    @property
+    def init_torso_qpos(self):
+        return np.array([0.2])
+
+    @property
+    def base_xpos_offset(self):
+        return {
+            "bins": (-0.6, -0.1, 0),
+            "empty": (-0.6, 0, 0),
+            "table": lambda table_length: (-0.16 - table_length / 2, 0, 0),
+        }

@@ -288,6 +288,11 @@ if __name__ == "__main__":
         "If 'achieved', the goal is updated based on the current achieved state. "
         "We recommend using 'achieved' (and input_ref_frame='base') if collecting demonstrations with a mobile base robot.",
     )
+    parser.add_argument(
+        "--no-collect",
+        action="store_true",
+        help="If set, do not collect data or save any demonstrations.",
+    )
     args = parser.parse_args()
 
     # Get controller config
@@ -335,8 +340,9 @@ if __name__ == "__main__":
     env_info = json.dumps(config)
 
     # wrap the environment with data collection wrapper
-    tmp_directory = "/tmp/{}".format(str(time.time()).replace(".", "_"))
-    env = DataCollectionWrapper(env, tmp_directory)
+    if not args.no_collect:
+        tmp_directory = "/tmp/{}".format(str(time.time()).replace(".", "_"))
+        env = DataCollectionWrapper(env, tmp_directory)
 
     # initialize device
     if args.device == "keyboard":
@@ -372,12 +378,14 @@ if __name__ == "__main__":
     else:
         raise Exception("Invalid device choice: choose either 'keyboard' or 'spacemouse'.")
 
-    # make a new timestamped directory
-    t1, t2 = str(time.time()).split(".")
-    new_dir = os.path.join(args.directory, "{}_{}".format(t1, t2))
-    os.makedirs(new_dir)
+    if not args.no_collect:
+        # make a new timestamped directory
+        t1, t2 = str(time.time()).split(".")
+        new_dir = os.path.join(args.directory, "{}_{}".format(t1, t2))
+        os.makedirs(new_dir)
 
     # collect demonstrations
     while True:
         collect_human_trajectory(env, device, args.arm, args.max_fr, args.goal_update_mode)
-        gather_demonstrations_as_hdf5(tmp_directory, new_dir, env_info)
+        if not args.no_collect:
+            gather_demonstrations_as_hdf5(tmp_directory, new_dir, env_info)

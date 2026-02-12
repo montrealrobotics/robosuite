@@ -31,6 +31,7 @@ ROBOT_CLASS_MAPPING = {
     "PandaDexRH": FixedBaseRobot,
     "PandaDexLH": FixedBaseRobot,
     "PandaDexLeapRH": FixedBaseRobot,
+    "PandaDexLeapRHOmron": WheeledRobot,
     "XArm7": FixedBaseRobot,
 }
 
