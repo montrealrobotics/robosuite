@@ -293,6 +293,39 @@ if __name__ == "__main__":
         action="store_true",
         help="If set, do not collect data or save any demonstrations.",
     )
+
+    # ── Quest / Rokoko device arguments ──
+    parser.add_argument(
+        "--vr-ip",
+        type=str,
+        default="192.168.50.89",
+        help="(quest_rokoko only) IP address of the Meta Quest headset",
+    )
+    parser.add_argument(
+        "--local-ip",
+        type=str,
+        default="192.168.50.178",
+        help="(quest_rokoko only) Local machine IP address",
+    )
+    parser.add_argument(
+        "--pose-cmd-port",
+        type=int,
+        default=12346,
+        help="(quest_rokoko only) UDP port for Quest wrist pose data",
+    )
+    parser.add_argument(
+        "--rokoko-port",
+        type=int,
+        default=14043,
+        help="(quest_rokoko only) UDP port for Rokoko glove data",
+    )
+    parser.add_argument(
+        "--ik-result-port",
+        type=int,
+        default=12345,
+        help="(quest_rokoko only) UDP port to send IK results back to Quest",
+    )
+
     args = parser.parse_args()
 
     # Get controller config
@@ -375,8 +408,23 @@ if __name__ == "__main__":
         from robosuite.devices.mjgui import MJGUI
 
         device = MJGUI(env=env)
+    elif args.device == "quest_rokoko":
+        from robosuite.devices.quest_rokoko import QuestRokoko
+
+        device = QuestRokoko(
+            env=env,
+            vr_ip=args.vr_ip,
+            local_ip=args.local_ip,
+            pose_cmd_port=args.pose_cmd_port,
+            ik_result_port=args.ik_result_port,
+            rokoko_port=args.rokoko_port,
+            pos_sensitivity=args.pos_sensitivity,
+            rot_sensitivity=args.rot_sensitivity,
+        )
     else:
-        raise Exception("Invalid device choice: choose either 'keyboard' or 'spacemouse'.")
+        raise Exception(
+            "Invalid device choice: choose from 'keyboard', 'spacemouse', 'dualsense', 'mjgui', or 'quest_rokoko'."
+        )
 
     if not args.no_collect:
         # make a new timestamped directory

@@ -156,3 +156,11 @@ class PandaDexLeapRHOmron(Panda):
             "empty": (-0.6, 0, 0),
             "table": lambda table_length: (-0.16 - table_length / 2, 0, 0),
         }
+
+    @property
+    def default_controller_config(self):
+        return {
+            "right": "default_panda",
+            "base": "joint_vel",
+            "torso": "joint_pos",
+        }
