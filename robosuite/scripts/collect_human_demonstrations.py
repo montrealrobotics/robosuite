@@ -288,6 +288,44 @@ if __name__ == "__main__":
         "If 'achieved', the goal is updated based on the current achieved state. "
         "We recommend using 'achieved' (and input_ref_frame='base') if collecting demonstrations with a mobile base robot.",
     )
+    parser.add_argument(
+        "--no-collect",
+        action="store_true",
+        help="If set, do not collect data or save any demonstrations.",
+    )
+
+    # ── Quest / Rokoko device arguments ──
+    parser.add_argument(
+        "--vr-ip",
+        type=str,
+        default="192.168.50.89",
+        help="(quest_rokoko only) IP address of the Meta Quest headset",
+    )
+    parser.add_argument(
+        "--local-ip",
+        type=str,
+        default="192.168.50.178",
+        help="(quest_rokoko only) Local machine IP address",
+    )
+    parser.add_argument(
+        "--pose-cmd-port",
+        type=int,
+        default=12346,
+        help="(quest_rokoko only) UDP port for Quest wrist pose data",
+    )
+    parser.add_argument(
+        "--rokoko-port",
+        type=int,
+        default=14043,
+        help="(quest_rokoko only) UDP port for Rokoko glove data",
+    )
+    parser.add_argument(
+        "--ik-result-port",
+        type=int,
+        default=12345,
+        help="(quest_rokoko only) UDP port to send IK results back to Quest",
+    )
+
     args = parser.parse_args()
 
     # Get controller config
@@ -335,8 +373,9 @@ if __name__ == "__main__":
     env_info = json.dumps(config)
 
     # wrap the environment with data collection wrapper
-    tmp_directory = "/tmp/{}".format(str(time.time()).replace(".", "_"))
-    env = DataCollectionWrapper(env, tmp_directory)
+    if not args.no_collect:
+        tmp_directory = "/tmp/{}".format(str(time.time()).replace(".", "_"))
+        env = DataCollectionWrapper(env, tmp_directory)
 
     # initialize device
     if args.device == "keyboard":
@@ -369,15 +408,32 @@ if __name__ == "__main__":
         from robosuite.devices.mjgui import MJGUI
 
         device = MJGUI(env=env)
-    else:
-        raise Exception("Invalid device choice: choose either 'keyboard' or 'spacemouse'.")
+    elif args.device == "quest_rokoko":
+        from robosuite.devices.quest_rokoko import QuestRokoko
 
-    # make a new timestamped directory
-    t1, t2 = str(time.time()).split(".")
-    new_dir = os.path.join(args.directory, "{}_{}".format(t1, t2))
-    os.makedirs(new_dir)
+        device = QuestRokoko(
+            env=env,
+            vr_ip=args.vr_ip,
+            local_ip=args.local_ip,
+            pose_cmd_port=args.pose_cmd_port,
+            ik_result_port=args.ik_result_port,
+            rokoko_port=args.rokoko_port,
+            pos_sensitivity=args.pos_sensitivity,
+            rot_sensitivity=args.rot_sensitivity,
+        )
+    else:
+        raise Exception(
+            "Invalid device choice: choose from 'keyboard', 'spacemouse', 'dualsense', 'mjgui', or 'quest_rokoko'."
+        )
+
+    if not args.no_collect:
+        # make a new timestamped directory
+        t1, t2 = str(time.time()).split(".")
+        new_dir = os.path.join(args.directory, "{}_{}".format(t1, t2))
+        os.makedirs(new_dir)
 
     # collect demonstrations
     while True:
         collect_human_trajectory(env, device, args.arm, args.max_fr, args.goal_update_mode)
-        gather_demonstrations_as_hdf5(tmp_directory, new_dir, env_info)
+        if not args.no_collect:
+            gather_demonstrations_as_hdf5(tmp_directory, new_dir, env_info)

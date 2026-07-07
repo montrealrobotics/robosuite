@@ -30,6 +30,8 @@ ROBOT_CLASS_MAPPING = {
     "GR1FloatingBody": LeggedRobot,
     "PandaDexRH": FixedBaseRobot,
     "PandaDexLH": FixedBaseRobot,
+    "PandaDexLeapRH": FixedBaseRobot,
+    "PandaDexLeapRHOmron": WheeledRobot,
     "XArm7": FixedBaseRobot,
 }
 
