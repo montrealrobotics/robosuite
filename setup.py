@@ -19,6 +19,7 @@ setup(
         "numba>=0.49.1",
         "scipy>=1.2.3",
         "mujoco>=3.3.0",
+        "pybullet>=3.2.5",  # PyBullet IK for the Quest+Rokoko teleop device
         "mink==0.0.5",
         "qpsolvers[quadprog]>=4.3.1",
         "Pillow",

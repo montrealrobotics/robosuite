@@ -1,0 +1,42 @@
+{
+    "type": "HYBRID_MOBILE_BASE",
+    "body_parts": {
+        "arms": {
+            "right": {
+                "type": "JOINT_POSITION",
+                "input_type": "absolute",
+                "input_max": 1,
+                "input_min": -1,
+                "output_max": 0.5,
+                "output_min": -0.5,
+                "kp": 150,
+                "damping_ratio": 1,
+                "impedance_mode": "fixed",
+                "kp_limits": [
+                    0,
+                    300
+                ],
+                "damping_ratio_limits": [
+                    0,
+                    10
+                ],
+                "qpos_limits": null,
+                "interpolation": null,
+                "ramp_ratio": 0.2,
+                "gripper": {
+                    "type": "GRIP",
+                    "use_action_scaling": false
+                }
+            }
+        },
+        "torso": {
+            "type": "JOINT_POSITION",
+            "interpolation": "null",
+            "kp": 2000
+        },
+        "base": {
+            "type": "JOINT_VELOCITY",
+            "interpolation": "null"
+        }
+    }
+}

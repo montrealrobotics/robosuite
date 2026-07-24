@@ -34,6 +34,10 @@ class DataCollectionWrapper(Wrapper):
         self.action_infos = []  # stores information about actions taken
         self.successful = False  # stores success state of demonstration
 
+        # optional per-step auxiliary data (e.g. raw teleop signals) to merge into the next
+        # recorded action_info; set via set_next_step_data() before calling step()
+        self._next_step_data = {}
+
         # how often to save simulation state, in terms of environment steps
         self.collect_freq = collect_freq
 
@@ -150,6 +154,16 @@ class DataCollectionWrapper(Wrapper):
         self._start_new_episode()
         return ret
 
+    def set_next_step_data(self, data):
+        """
+        Register auxiliary data to be stored alongside the next recorded step.
+
+        Args:
+            data (dict): mapping of name -> array. Merged into the action_info dict on the next
+                step() that gets recorded (i.e. every collect_freq-th step). Cleared after use.
+        """
+        self._next_step_data = dict(data) if data else {}
+
     def step(self, action):
         """
         Extends vanilla step() function call to accommodate data collection
@@ -184,6 +198,11 @@ class DataCollectionWrapper(Wrapper):
             step_info = ret[3]
             if "action_abs" in step_info.keys():
                 info["actions_abs"] = np.array(step_info["action_abs"])
+
+            # (if applicable) merge auxiliary per-step data provided by the caller
+            if self._next_step_data:
+                info.update(self._next_step_data)
+                self._next_step_data = {}
 
             self.action_infos.append(info)
 

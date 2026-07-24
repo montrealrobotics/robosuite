@@ -12,7 +12,4 @@ except ImportError as e:
            requirements with `pip install -r requirements-extra.txt`"""
     )
 
-try:
-    from .quest_rokoko import QuestRokoko
-except ImportError as e:
-    print(f"Unable to load QuestRokoko device (requires scipy): {e}")
+from .quest_rokoko import QuestRokoko

@@ -118,6 +118,63 @@ class PandaDexLeapRH(Panda):
         return {"right": [0, 1, 0, 0]}
 
 
+class XArm6DexLeapRH(XArm6):
+    """XArm6 arm + LEAP right hand (the lab's Franka-replacement setup)."""
+
+    @property
+    def default_gripper(self):
+        return {"right": "LEAPRightHand"}
+
+    # These reproduce the exact palm pose relative to the flange that PandaDexLeapRH uses, expressed
+    # in the xArm tool frame (which is the Panda's right_hand frame rotated by 135 deg about z).
+    # Retune both if the physical mounting bracket differs.
+    @property
+    def gripper_mount_pos_offset(self):
+        return {"right": [-0.028256, 0.056582, 0.0]}
+
+    @property
+    def gripper_mount_quat_offset(self):
+        return {"right": [0.0, 0.382691, 0.923785, 0.0]}
+
+
+class XArm6DexLeapRHOmron(XArm6DexLeapRH):
+    """XArm6 arm + LEAP right hand on Omron wheeled base (for Robocasa kitchen tasks)."""
+
+    @property
+    def default_base(self):
+        return "OmronMobileBase"
+
+    @property
+    def default_arms(self):
+        return {"right": "XArm6"}
+
+    @property
+    def init_qpos(self):
+        # same idea as XArm6.init_qpos, re-solved so the flange matches PandaDexLeapRHOmron's once
+        # the torso lift is accounted for
+        return np.array([0.0, 0.0767, -0.7906, 0.0, 0.5933, 0.0])
+
+    @property
+    def init_torso_qpos(self):
+        return np.array([0.2])
+
+    @property
+    def base_xpos_offset(self):
+        return {
+            "bins": (-0.6, -0.1, 0),
+            "empty": (-0.6, 0, 0),
+            "table": lambda table_length: (-0.16 - table_length / 2, 0, 0),
+        }
+
+    @property
+    def default_controller_config(self):
+        return {
+            "right": "default_xarm6",
+            "base": "joint_vel",
+            "torso": "joint_pos",
+        }
+
+
 class PandaDexLeapRHOmron(Panda):
     """Panda arm + LEAP right hand on Omron wheeled base (for Robocasa kitchen tasks)."""
 

@@ -201,6 +201,95 @@ def quat_slerp(quat0, quat1, fraction, shortestpath=True):
     return q0
 
 
+def quat_slerp_vectorized(quat0, quat1, fraction, shortestpath=True, eps=1e-6):
+    """
+    Vectorized Spherical Linear Interpolation (SLERP) between two arrays of quaternions.
+
+    Args:
+        quat0 (np.array): (N, 4) or (4,) start quaternions (x,y,z,w)
+        quat1 (np.array): (N, 4) or (4,) end quaternions (x,y,z,w)
+        fraction (float or np.array): Interpolation fraction (0.0 to 1.0).
+                                      Can be a scalar or shape (N,)
+        shortestpath (bool): If True, ensures interpolation takes the shortest arc.
+        eps (float): Threshold for treating angles as zero (returns q0 to avoid div by zero).
+
+    Returns:
+        np.array: (N, 4) or (4,) interpolated quaternions
+    """
+    # 1. Standardize Inputs to (N, 4)
+    q0 = np.atleast_2d(np.asarray(quat0, dtype=np.float32))
+    q1 = np.atleast_2d(np.asarray(quat1, dtype=np.float32))
+
+    # Handle broadcasting for fraction if it's a scalar
+    if np.isscalar(fraction):
+        fraction = np.full(q0.shape[0], fraction)
+    else:
+        fraction = np.asarray(fraction)
+
+    # 2. Normalize Inputs (Vectorized unit_vector)
+    # We use keepdims=True to allow broadcasting division
+    q0_norm = np.linalg.norm(q0, axis=1, keepdims=True)
+    q1_norm = np.linalg.norm(q1, axis=1, keepdims=True)
+
+    # Avoid division by zero for zero-length quaternions (though invalid for rotation)
+    q0 = np.divide(q0, q0_norm, out=np.copy(q0), where=q0_norm > eps)
+    q1 = np.divide(q1, q1_norm, out=np.copy(q1), where=q1_norm > eps)
+
+    # 3. Compute Dot Product (Cosine of angle)
+    d = np.sum(q0 * q1, axis=1)
+
+    # 4. Shortest Path Logic
+    # If dot < 0, we flip q1 and the dot product to take the shorter way around
+    if shortestpath:
+        # Create a boolean mask where dot product is negative
+        neg_mask = d < 0.0
+        # Flip q1 in-place only where needed
+        q1[neg_mask] *= -1.0
+        d[neg_mask] *= -1.0
+
+    # 5. Clamp and Calculate Angle
+    d = np.clip(d, -1.0, 1.0)
+    theta = np.arccos(d)
+    sin_theta = np.sin(theta)
+
+    # 6. Calculate Interpolation Scales
+    # Check for small angles to avoid division by zero (Linear fallback / Return q0)
+    # Mask where angle is NOT too small
+    safe_mask = sin_theta > eps
+
+    scale0 = np.ones_like(d)
+    scale1 = np.zeros_like(d)
+
+    # Only perform SLERP math where safe
+    if np.any(safe_mask):
+        inv_sin = 1.0 / sin_theta[safe_mask]
+
+        # SLERP formulas
+        # scale0 = sin((1-t)*theta) / sin(theta)
+        # scale1 = sin(t*theta) / sin(theta)
+
+        # Extract safe values
+        t_safe = fraction[safe_mask]
+        theta_safe = theta[safe_mask]
+
+        s0 = np.sin((1.0 - t_safe) * theta_safe) * inv_sin
+        s1 = np.sin(t_safe * theta_safe) * inv_sin
+
+        scale0[safe_mask] = s0
+        scale1[safe_mask] = s1
+
+    # 7. Compute Result
+    # Reshape scales to (N, 1) to broadcast over the 4 quaternion components
+    res = (scale0[:, None] * q0) + (scale1[:, None] * q1)
+
+    # 8. Return in correct shape
+    # If original input was 1D, flatten the result back
+    if np.ndim(quat0) == 1 and np.ndim(quat1) == 1:
+        return res.flatten()
+
+    return res
+
+
 def random_quat(rand=None):
     """
     Return uniform random unit quaternion.

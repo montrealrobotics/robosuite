@@ -1,0 +1,169 @@
+<!-- xArm6 (UFactory)
+
+Derived from the publicly available xarm_description URDF following the same procedure as
+mujoco_menagerie's ufactory_xarm7:
+  1. Added <mujoco><compiler discardvisual="false" fusestatic="false" strippath="false"/></mujoco>
+     to the URDF's <robot> clause so visual geometries are preserved.
+  2. Loaded the URDF into MuJoCo and saved the corresponding MJCF.
+  3. Extracted common properties into the <default> section.
+  4. Added torque actuators and the robosuite mount/eef conventions.
+
+Two deviations from a straight conversion:
+  * link2 and link3 inertia tensors in the source URDF violate the triangle inequality (they are not
+    physically realizable). Rather than let MuJoCo's balanceinertia collapse them to isotropic, the
+    smallest principal moment of each was raised by the minimum amount needed for validity, which
+    preserves the original anisotropy.
+  * The collision meshes are the URDF's VHACD decompositions split into their individual convex
+    hulls (MuJoCo takes the convex hull of a whole mesh file, so an undivided VHACD obj would
+    collapse back into a single coarse hull).
+-->
+<mujoco model="xarm6">
+  <compiler angle="radian" autolimits="true"/>
+
+  <option integrator="implicitfast"/>
+
+  <default>
+    <default class="visual">
+      <geom type="mesh" contype="0" conaffinity="0" group="1" density="0"/>
+    </default>
+    <default class="collision">
+      <geom type="mesh" group="0"/>
+    </default>
+  </default>
+
+  <asset>
+    <material name="white" rgba="1 1 1 1"/>
+    <material name="gray" rgba="0.753 0.753 0.753 1"/>
+    <material name="black" rgba="0.149 0.149 0.149 1"/>
+
+    <mesh name="link_base" file="meshes/visual/link_base.obj"/>
+    <mesh name="link1" file="meshes/visual/link1.obj"/>
+    <mesh name="link2" file="meshes/visual/link2.obj"/>
+    <mesh name="link3" file="meshes/visual/link3.obj"/>
+    <mesh name="link4" file="meshes/visual/link4.obj"/>
+    <mesh name="link5" file="meshes/visual/link5.obj"/>
+    <mesh name="link6" file="meshes/visual/link6.obj"/>
+
+    <mesh name="link_base_c0" file="meshes/collision/link_base_0.obj"/>
+    <mesh name="link_base_c1" file="meshes/collision/link_base_1.obj"/>
+    <mesh name="link_base_c2" file="meshes/collision/link_base_2.obj"/>
+    <mesh name="link_base_c3" file="meshes/collision/link_base_3.obj"/>
+    <mesh name="link_base_c4" file="meshes/collision/link_base_4.obj"/>
+    <mesh name="link1_c0" file="meshes/collision/link1_0.obj"/>
+    <mesh name="link1_c1" file="meshes/collision/link1_1.obj"/>
+    <mesh name="link2_c0" file="meshes/collision/link2_0.obj"/>
+    <mesh name="link2_c1" file="meshes/collision/link2_1.obj"/>
+    <mesh name="link2_c2" file="meshes/collision/link2_2.obj"/>
+    <mesh name="link3_c0" file="meshes/collision/link3_0.obj"/>
+    <mesh name="link3_c1" file="meshes/collision/link3_1.obj"/>
+    <mesh name="link3_c2" file="meshes/collision/link3_2.obj"/>
+    <mesh name="link4_c0" file="meshes/collision/link4_0.obj"/>
+    <mesh name="link4_c1" file="meshes/collision/link4_1.obj"/>
+    <mesh name="link4_c2" file="meshes/collision/link4_2.obj"/>
+    <mesh name="link4_c3" file="meshes/collision/link4_3.obj"/>
+    <mesh name="link4_c4" file="meshes/collision/link4_4.obj"/>
+    <mesh name="link5_c0" file="meshes/collision/link5_0.obj"/>
+    <mesh name="link5_c1" file="meshes/collision/link5_1.obj"/>
+    <mesh name="link6_c0" file="meshes/collision/link6_0.obj"/>
+  </asset>
+
+  <worldbody>
+    <body name="base" pos="0 0 0">
+      <!-- robot view -->
+      <camera mode="fixed" name="robotview" pos="1.0 0 0.4" quat="0.653 0.271 0.271 0.653"/>
+      <!-- mount attached here -->
+
+      <inertial pos="0 0 0.09103" quat="0.981065 0.000747228 -0.0021866 -0.193666" mass="2.7"
+        diaginertia="0.00495024 0.00494031 0.00221894"/>
+      <geom class="visual" material="white" mesh="link_base"/>
+      <geom class="collision" name="link_base_collision_0" mesh="link_base_c0"/>
+      <geom class="collision" name="link_base_collision_1" mesh="link_base_c1"/>
+      <geom class="collision" name="link_base_collision_2" mesh="link_base_c2"/>
+      <geom class="collision" name="link_base_collision_3" mesh="link_base_c3"/>
+      <geom class="collision" name="link_base_collision_4" mesh="link_base_c4"/>
+      <body name="link1" pos="0 0 0.267">
+        <site name="right_center" pos="0 0 0" size="0.01" rgba="1 0.3 0.3 1" group="2"/>
+        <inertial pos="-0.002 0.02692 -0.01332" quat="0.983139 0.180751 -0.00455228 0.0272976" mass="2.16"
+          diaginertia="0.00539487 0.00519906 0.00281397"/>
+        <joint name="joint1" axis="0 0 1" range="-6.28319 6.28319" frictionloss="1" damping="0.1"/>
+        <geom class="visual" material="white" mesh="link1"/>
+        <geom class="collision" name="link1_collision_0" mesh="link1_c0"/>
+        <geom class="collision" name="link1_collision_1" mesh="link1_c1"/>
+        <body name="link2" quat="1 -1 0 0">
+          <!-- diaginertia below is the minimally-corrected version of the URDF's invalid tensor -->
+          <inertial pos="0.03531 -0.21398 0.03386" quat="0.214645 -0.60183 0.654652 -0.40393" mass="1.71"
+            diaginertia="0.0033212 0.0236436 0.0268997"/>
+          <joint name="joint2" axis="0 0 1" range="-2.059 2.0944" frictionloss="1" damping="0.1"/>
+          <geom class="visual" material="white" mesh="link2"/>
+          <geom class="collision" name="link2_collision_0" mesh="link2_c0"/>
+          <geom class="collision" name="link2_collision_1" mesh="link2_c1"/>
+          <geom class="collision" name="link2_collision_2" mesh="link2_c2"/>
+          <body name="link3" pos="0.0535 -0.2845 0">
+            <!-- diaginertia below is the minimally-corrected version of the URDF's invalid tensor -->
+            <inertial pos="0.06781 0.10749 0.01457" quat="0.60411 -0.0838317 -0.435089 0.662361" mass="1.384"
+              diaginertia="0.00306659 0.00429974 0.0073062"/>
+            <joint name="joint3" axis="0 0 1" range="-3.927 0.19198" frictionloss="1" damping="0.1"/>
+            <geom class="visual" material="white" mesh="link3"/>
+            <geom class="collision" name="link3_collision_0" mesh="link3_c0"/>
+            <geom class="collision" name="link3_collision_1" mesh="link3_c1"/>
+            <geom class="collision" name="link3_collision_2" mesh="link3_c2"/>
+            <body name="link4" pos="0.0775 0.3425 0" quat="1 -1 0 0">
+              <inertial pos="-0.00021 0.02578 -0.02538" quat="0.994019 0.0752563 -0.00686804 0.0788347" mass="1.115"
+                diaginertia="0.00440091 0.00406855 0.00103407"/>
+              <joint name="joint4" axis="0 0 1" range="-6.28319 6.28319" frictionloss="1" damping="0.1"/>
+              <geom class="visual" material="white" mesh="link4"/>
+              <geom class="collision" name="link4_collision_0" mesh="link4_c0"/>
+              <geom class="collision" name="link4_collision_1" mesh="link4_c1"/>
+              <geom class="collision" name="link4_collision_2" mesh="link4_c2"/>
+              <geom class="collision" name="link4_collision_3" mesh="link4_c3"/>
+              <geom class="collision" name="link4_collision_4" mesh="link4_c4"/>
+              <body name="link5" quat="1 1 0 0">
+                <inertial pos="0.05428 0.01781 0.00543" quat="-0.0766302 0.578118 -0.269638 0.766291" mass="1.275"
+                  diaginertia="0.00289757 0.0023276 0.000951789"/>
+                <joint name="joint5" axis="0 0 1" range="-1.69297 3.14159" frictionloss="1" damping="0.01"/>
+                <geom class="visual" material="white" mesh="link5"/>
+                <geom class="collision" name="link5_collision_0" mesh="link5_c0"/>
+                <geom class="collision" name="link5_collision_1" mesh="link5_c1"/>
+                <body name="link6" pos="0.076 0.097 0" quat="1 -1 0 0">
+                  <inertial pos="0 0.00064 -0.00952" quat="0 0.707107 0 0.707107" mass="0.1096"
+                    diaginertia="7.9715e-05 4.8111e-05 4.5293e-05"/>
+                  <joint name="joint6" axis="0 0 1" range="-6.28319 6.28319" frictionloss="1" damping="0.01"/>
+                  <geom class="visual" material="gray" mesh="link6"/>
+                  <geom class="collision" name="link6_collision_0" mesh="link6_c0"/>
+
+                  <!-- The UFactory tool frame: +z points out of the flange, rotated 180deg about z
+                       so the stock parallel gripper mounts with an identity offset (matches
+                       mujoco_menagerie's xarm7 <-> xarm_gripper attachment). -->
+                  <body name="right_hand" pos="0 0 0" quat="0 0 0 1">
+                    <!-- These sites were added for visualization. They are all standardized between models-->
+                    <!-- Position mimics the gripper attachment point (right_hand) -->
+                    <!--  Y-axis should be perpendicular to grasping motion, and Z-axis should point out of the robot eef -->
+
+                    <!--  Values here must be tuned manually -->
+                    <site name="ee" pos="0 0 0" size="0.01 0.01 0.01" rgba="0 0 1 1" type="sphere" group="1"/>
+                    <site name="ee_x" pos="0 0 0" size="0.005 .1" quat="0.707105 0.707108 0 0 " rgba="1 0 0 0" type="cylinder"/>
+                    <site name="ee_z" pos="0 0 0" size="0.005 .1" quat="0.707105 0 0 0.707108" rgba="0 0 1 0" type="cylinder"/>
+                    <site name="ee_y" pos="0 0 0" size="0.005 .1" quat="0.707105 0 0.707108 0 " rgba="0 1 0 0" type="cylinder"/>
+                    <!-- This camera points out from the eef. -->
+                    <camera mode="fixed" name="eye_in_hand" pos="0.05 0 0" quat="0 0.707108 0.707108 0" fovy="75"/>
+                    <!-- to add gripper -->
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <!-- Physical limits of the actuator, taken from the URDF joint effort limits. -->
+    <motor ctrllimited="true" ctrlrange="-50.0 50.0" joint="joint1" name="torq_j1"/>
+    <motor ctrllimited="true" ctrlrange="-50.0 50.0" joint="joint2" name="torq_j2"/>
+    <motor ctrllimited="true" ctrlrange="-32.0 32.0" joint="joint3" name="torq_j3"/>
+    <motor ctrllimited="true" ctrlrange="-32.0 32.0" joint="joint4" name="torq_j4"/>
+    <motor ctrllimited="true" ctrlrange="-32.0 32.0" joint="joint5" name="torq_j5"/>
+    <motor ctrllimited="true" ctrlrange="-20.0 20.0" joint="joint6" name="torq_j6"/>
+  </actuator>
+</mujoco>
